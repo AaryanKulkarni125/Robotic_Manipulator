@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    Gazebo-specific tags.
+
+    URDF <material> is an RViz/rendering convenience only; gz sim does not
+    read it. Colors must be repeated here via <gazebo reference="..."> so the
+    robot renders with the same colors as materials.xacro instead of default
+    grey/white.
+
+    A fixed joint anchors base_link to a "world" link so the robot does not
+    free-fall under gravity before ros2_control exists (Phase 3).
+  -->
+
+  <link name="world"/>
+
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="base_link">
+    <material>
+      <ambient>0.2 0.2 0.2 1.0</ambient>
+      <diffuse>0.2 0.2 0.2 1.0</diffuse>
+    </material>
+  </gazebo>
+
+  <gazebo reference="link1">
+    <material>
+      <ambient>0.1 0.4 0.8 1.0</ambient>
+      <diffuse>0.1 0.4 0.8 1.0</diffuse>
+    </material>
+  </gazebo>
+
+  <gazebo reference="link2">
+    <material>
+      <ambient>0.1 0.7 0.3 1.0</ambient>
+      <diffuse>0.1 0.7 0.3 1.0</diffuse>
+    </material>
+  </gazebo>
+
+  <gazebo reference="end_effector">
+    <material>
+      <ambient>0.8 0.4 0.1 1.0</ambient>
+      <diffuse>0.8 0.4 0.1 1.0</diffuse>
+    </material>
+  </gazebo>
+
+</robot>

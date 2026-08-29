@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    ros2_control hardware interface (Phase 3).
+
+    Uses gz_ros2_control/GazeboSimSystem, the Gazebo Sim (Harmonic-class)
+    hardware plugin for ROS 2 Jazzy - NOT Gazebo Classic's gazebo_ros_control.
+
+    Command interface is position-only per joint (matches the position
+    joint_trajectory_controller configured in config/manipulator_controllers.yaml).
+    Limits mirror the <limit> values in manipulator.xacro exactly.
+  -->
+
+  <ros2_control name="ManipulatorSystem" type="system">
+
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+
+    <joint name="joint1">
+      <command_interface name="position">
+        <param name="min">-3.14159265</param>
+        <param name="max">3.14159265</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="joint2">
+      <command_interface name="position">
+        <param name="min">-1.57079633</param>
+        <param name="max">1.57079633</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="joint3">
+      <command_interface name="position">
+        <param name="min">-2.35619449</param>
+        <param name="max">2.35619449</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="right_finger_joint">
+      <command_interface name="position">
+        <param name="min">0.0</param>
+        <param name="max">0.02</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="left_finger_joint">
+      <command_interface name="position">
+        <param name="min">-0.02</param>
+        <param name="max">0.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find manipulator_description)/config/manipulator_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>

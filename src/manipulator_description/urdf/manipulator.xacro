@@ -8,6 +8,8 @@
 
   <xacro:include filename="$(find manipulator_description)/urdf/materials.xacro"/>
   <xacro:include filename="$(find manipulator_description)/urdf/inertial_macros.xacro"/>
+  <xacro:include filename="$(find manipulator_description)/urdf/gazebo.xacro"/>
+  <xacro:include filename="$(find manipulator_description)/urdf/ros2_control.xacro"/>
 
 
   
@@ -272,6 +274,9 @@
 
   </link>
 
+
+  <!-- Gripper (uses ee_length, must be included after properties above) -->
+  <xacro:include filename="$(find manipulator_description)/urdf/gripper.xacro"/>
 
 </robot>
 

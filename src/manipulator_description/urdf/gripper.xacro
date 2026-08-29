@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    Simple parallel-jaw gripper mounted at the tip of end_effector.
+
+    ee_tip: fixed, massless-ish reference frame at the physical tip of the
+    arm (EE_LENGTH along end_effector's local X). This is the point
+    scripts/kinematics.py's forward_kinematics()/inverse_kinematics() model,
+    and the point the pick-and-place demo treats as the tool center point.
+
+    Both fingers are independently ros2_control-actuated (0 = open,
+    GRIPPER_STROKE = closed, mirrored axis/limit range on left_finger_joint
+    - see the joints below). A <mimic> joint was tried first but this
+    build's physics engine (DART) does not support mimic constraints
+    (`[Err] Physics.cc:1808 ... does not support mimic constraints`).
+    With two independent joints, declaration ORDER matters: right_finger_joint
+    must be listed before left_finger_joint here AND in
+    config/manipulator_controllers.yaml's gripper_controller.joints - with
+    the reverse order, left_finger_joint was empirically found to never
+    track position commands in this gz-sim/gz_ros2_control build (confirmed
+    by reading its actual physical pose via `gz topic -e -t
+    .../dynamic_pose/info`, independent of axis direction or limit sign).
+
+    Rigid pickup during the pick-and-place demo uses gz-sim's real
+    DetachableJoint system (gz-sim-detachable-joint-system, plugin block
+    below) - a real physics-engine joint, so the object follows the
+    gripper through physics, not repeated teleportation, and is released
+    again with a single message on <detach_topic>. This is the only
+    functional change made to this file relative to the previously working
+    version: the gripper links/joints/geometry above are unchanged.
+
+    This installed build (gz-sim 8.11.0, vendored via
+    ros-jazzy-gz-sim-vendor) does NOT reliably start detached in practice -
+    confirmed by direct testing (see scripts/pick_and_place.py's module
+    docstring): the fix is an unconditional detach request sent once at
+    startup, before the state machine begins, to force a known-good
+    baseline.
+
+    parent_link is "end_effector", NOT "ee_tip": ee_tip is joined to
+    end_effector by a `type="fixed"` joint, and sdformat's URDF->SDF
+    converter lumps any link connected only by a fixed joint into its
+    parent regardless of whether it has a <collision> (verified with
+    `gz sdf -p` on this xacro's output: no "ee_tip" link appears in the
+    resulting SDF). end_effector is the closest real SDF link to the
+    gripper, and is rigid relative to ee_tip, so using it as parent_link
+    is kinematically equivalent for this rigid-grasp purpose.
+  -->
+
+  <xacro:property name="ee_tip_offset" value="${ee_length}"/>
+
+  <xacro:property name="gripper_finger_offset" value="0.03"/>
+  <xacro:property name="gripper_stroke" value="0.02"/>
+  <xacro:property name="finger_length" value="0.04"/>
+  <xacro:property name="finger_width" value="0.01"/>
+  <xacro:property name="finger_height" value="0.02"/>
+  <xacro:property name="finger_mass" value="0.02"/>
+
+  <link name="ee_tip">
+    <visual>
+      <geometry>
+        <sphere radius="0.008"/>
+      </geometry>
+      <material name="end_effector_material"/>
+    </visual>
+    <!--
+      A collision is required here (not just visual+inertial) - sdformat's
+      URDF->SDF converter otherwise lumps a visual-only fixed-child link
+      into its parent, silently removing ee_tip as a distinct SDF link
+      (kept as documentation of that behavior; not load-bearing now that
+      no Gazebo plugin references "ee_tip" by name).
+    -->
+    <collision>
+      <geometry>
+        <sphere radius="0.008"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.001"/>
+      <inertia ixx="1e-7" ixy="0.0" ixz="0.0" iyy="1e-7" iyz="0.0" izz="1e-7"/>
+    </inertial>
+  </link>
+
+  <joint name="ee_tip_joint" type="fixed">
+    <parent link="end_effector"/>
+    <child link="ee_tip"/>
+    <origin xyz="${ee_tip_offset} 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- LEFT FINGER (+Y side, closes toward -Y) -->
+  <link name="left_finger">
+    <visual>
+      <origin xyz="${finger_length/2} 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${finger_length} ${finger_width} ${finger_height}"/>
+      </geometry>
+      <material name="base_material"/>
+    </visual>
+    <collision>
+      <origin xyz="${finger_length/2} 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${finger_length} ${finger_width} ${finger_height}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="${finger_mass}"/>
+      <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6"/>
+    </inertial>
+  </link>
+
+  <joint name="left_finger_joint" type="prismatic">
+    <parent link="ee_tip"/>
+    <child link="left_finger"/>
+    <origin xyz="0 ${gripper_finger_offset} 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-${gripper_stroke}" upper="0.0" effort="5.0" velocity="0.05"/>
+  </joint>
+
+  <!-- RIGHT FINGER (-Y side, closes toward +Y) -->
+  <link name="right_finger">
+    <visual>
+      <origin xyz="${finger_length/2} 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${finger_length} ${finger_width} ${finger_height}"/>
+      </geometry>
+      <material name="base_material"/>
+    </visual>
+    <collision>
+      <origin xyz="${finger_length/2} 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${finger_length} ${finger_width} ${finger_height}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="${finger_mass}"/>
+      <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6"/>
+    </inertial>
+  </link>
+
+  <joint name="right_finger_joint" type="prismatic">
+    <parent link="ee_tip"/>
+    <child link="right_finger"/>
+    <origin xyz="0 -${gripper_finger_offset} 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0.0" upper="${gripper_stroke}" effort="5.0" velocity="0.05"/>
+  </joint>
+
+  <!--
+    DetachableJoint: creates a real fixed joint between ee_tip (parent,
+    fixed relative to end_effector - NOT a moving finger link, so the
+    joint does not fight finger motion while opening/closing) and the
+    pick_object model's object_link. Starts detached; scripts/pick_and_place.py
+    publishes an Empty message to attach_topic after the gripper has
+    closed around the object, and to detach_topic to release it. Topic
+    names are explicit here so the Python side does not have to reproduce
+    gz-sim's default-topic-name logic.
+  -->
+  <gazebo>
+    <plugin filename="gz-sim-detachable-joint-system"
+            name="gz::sim::systems::DetachableJoint">
+      <parent_link>end_effector</parent_link>
+      <child_model>pick_object</child_model>
+      <child_link>object_link</child_link>
+      <attach_topic>/gripper/attach</attach_topic>
+      <detach_topic>/gripper/detach</detach_topic>
+      <output_topic>/gripper/state</output_topic>
+    </plugin>
+  </gazebo>
+
+</robot>

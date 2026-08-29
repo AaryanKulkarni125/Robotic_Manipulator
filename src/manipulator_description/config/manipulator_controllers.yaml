@@ -1,0 +1,43 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    # gz_ros2_control's GazeboSimSystem position command interface is
+    # closed-loop (proportional gain -> velocity/effort), not a direct
+    # kinematic teleport. The library default (0.1) is far too low for this
+    # arm's gravity-loaded joints (joint2/joint3) to settle to <1 mm of the
+    # commanded position; raised here after empirical tuning against the
+    # accuracy test in scripts/accuracy_test.py.
+    position_proportional_gain: 500.0
+
+joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+
+gripper_controller:
+  ros__parameters:
+    joints:
+      - right_finger_joint
+      - left_finger_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity

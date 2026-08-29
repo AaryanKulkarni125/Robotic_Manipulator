@@ -27,6 +27,13 @@
   <depend>ros2_controllers</depend>
 
   <depend>gz_ros2_control</depend>
+  <depend>ros_gz_sim</depend>
+
+  <depend>rclpy</depend>
+  <depend>control_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

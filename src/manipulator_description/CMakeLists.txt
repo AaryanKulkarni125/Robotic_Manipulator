@@ -26,4 +26,15 @@ install(
   DIRECTORY urdf launch config meshes worlds
   DESTINATION share/${PROJECT_NAME}
 )
+
+install(
+  PROGRAMS
+    scripts/kinematics.py
+    scripts/trajectory_generator.py
+    scripts/pick_and_place.py
+    scripts/gripper_bridge.py
+    scripts/accuracy_test.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()
